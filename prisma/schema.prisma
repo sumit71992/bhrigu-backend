@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+generator erd {
+  provider = "prisma-erd-generator"
+  output   = "./ERD.svg"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  id    Int    @id @default(autoincrement())
+  name  String @unique
+  users User[]
+}
+
+model User {
+  id           Int           @id @default(autoincrement())
+  role         Role          @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  roleId       Int
+  name         String
+  profilePic   String?
+  email        String        @unique
+  mobileNumber String?       @unique
+  password     String
+  deviceToken  String?       @db.Text
+  status       userStatus    @default(EMAILOTPREQUIRED)
+  subscription Subscription?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  otp          Otp?
+}
+
+model Otp {
+  id        Int       @id @default(autoincrement())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int       @unique
+  otp       String
+  type      otpType   @default(SIGNUP)
+  status    otpStatus @default(ACTIVE)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model Subscription {
+  id                   Int       @id @default(autoincrement())
+  user                 User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId               Int?      @unique
+  storePromotionId     Int?
+  autoProductRenew     Boolean   @default(false)
+  autoStoreRenew       Boolean   @default(false)
+  planSubscriptionDate DateTime?
+  planExpiryDate       DateTime?
+  subscriptionDate     DateTime?
+  expiryDate           DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt()
+}
+
+enum userStatus {
+  ACTIVE
+  INACTIVE
+  EMAILOTPREQUIRED
+  MOBILEOTPREQUIRED
+}
+
+enum otpType {
+  FORGOTPASSWORD
+  SIGNUP
+  LOGIN
+}
+
+enum otpStatus {
+  ACTIVE
+  INACTIVE
+  INPROGRESS
+}
